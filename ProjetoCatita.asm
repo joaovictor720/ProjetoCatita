@@ -16,16 +16,20 @@ include \masm32\macros\macros.asm
     color dd ?
     increment dd ?
     fileName db 50 dup(?)
+    newFileName db 50 dup(?)
+    pixelBuffer db 3 dup(?)
 
     inputString db 50 dup(?)
     inputHandle dd ?
     outputHandle dd ?
-    fileHandle dd ?
     consoleCount dd ?
-    tamanhoString dd ?
+    stringSize dd ?
     
-    pixelBuffer db 3 dup(?)
-    readCount 
+    fileInputHandle dd ?
+    fileOutputHandle dd ?
+    readCount dd ?
+    writeCount dd ?
+    bmpHeader db 54 dup(?)
 
 .data
     DEBUG_MSG db "String lida: ", 0ah, 0
@@ -47,16 +51,18 @@ start:
 
     ; Lendo nome do arquivo a ser usado
     invoke StrLen, addr prompt_arquivo
-    mov tamanhoString, eax
-    invoke WriteConsole, outputHandle, addr prompt_arquivo, tamanhoString, addr consoleCount, NULL
+    mov stringSize, eax
+    invoke WriteConsole, outputHandle, addr prompt_arquivo, stringSize, addr consoleCount, NULL
     invoke ReadConsole, inputHandle, addr inputString, sizeof inputString, addr consoleCount, NULL
+    push offset inputString
+    call ParseNewLine
     mov eax, inputString
     mov fileName, eax
 
-    ; Lendo a color escolhida
+    ; Lendo a cor escolhida
     invoke StrLen, addr prompt_cor
-    mov tamanhoString, eax
-    invoke WriteConsole, outputHandle, addr prompt_cor, tamanhoString, addr consoleCount, NULL
+    mov stringSize, eax
+    invoke WriteConsole, outputHandle, addr prompt_cor, stringSize, addr consoleCount, NULL
     invoke ReadConsole, inputHandle, addr inputString, sizeof inputString, addr consoleCount, NULL
     push offset inputString
     call ParseNewLine
@@ -64,10 +70,10 @@ start:
     call atodw
     mov color, eax
 
-    ; Lendo o increment escolhido para a color
+    ; Lendo o incremento escolhido para a cor
     invoke StrLen, addr prompt_increment
-    mov tamanhoString, eax
-    invoke WriteConsole, outputHandle, addr prompt_increment, tamanhoString, addr consoleCount, NULL
+    mov stringSize, eax
+    invoke WriteConsole, outputHandle, addr prompt_increment, stringSize, addr consoleCount, NULL
     invoke ReadConsole, inputHandle, addr inputString, sizeof inputString, addr consoleCount, NULL
     push offset inputString
     call ParseNewLine
@@ -75,19 +81,56 @@ start:
     call atodw
     mov increment, eax
 
-    ; Abrindo o arquivo para leitura
+    ; Abrindo o arquivo original para leitura
     invoke CreateFile, addr fileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
-    mov fileHandle, eax
+    mov fileInputHandle, eax
 
-    invoke ExitProcess, 0
+    ; Criando o novo arquivo de saída
+    invoke CreateFile, addr newFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL
+    mov fileOutputHandle, eax
+
+    ; Copiando o cabeçalho do arquivo original para o novo
+    invoke ReadFile, fileInputHandle, addr bmpHeader, sizeof bmpHeader, addr readCount, NULL
+    invoke WriteFile, fileOutputHandle, addr bmpHeader, sizeof bmpHeader, addr writeCount, NULL
+
+    readPixel:
+        ; Lendo um pixel
+        invoke ReadFile, fileInputHandle, addr pixelBuffer, sizeof pixelBuffer, addr readCount, NULL
+        cmp readCount, 0 ; Verificando o final do arquivo
+        je fim
+        
+        ; Chamando subrotina que modifica um pixel
+        push increment
+        push color
+        push offset pixelBuffer
+        call ModifyPixel
+
+        ; Escrevendo o pixel modificado no novo arquivo
+        invoke WriteFile, fileOutputHandle, addr pixelBuffer, sizeof pixelBuffer, addr writeCount, NULL
+        jmp readPixel
+
+    fim:
+
+        invoke ExitProcess, 0
 
 ModifyPixel: ; 3 parâmetros (4 bytes cada) -> pixel db dup(3), cor dd, incremento dd
     push ebp
     mov ebp, esp
-    sub esp, 
     
-    mov 
-    invoke ReadFile, fileHandle, addr pixelBuffer, 3, addr readCount, NULL
+    mov ebx, DWORD PTR [ebp+8] ; Pegando o endereço do array que é o pixel
+    mov ecx, DWORD PTR [ebp+12] ; Pegando a cor
+    mov edx, DWORD PTR [ebp+16] ; Pegando o incremento
+
+    add ebx, ecx ; Ajustando o endereço do pixel pra acessar a cor certa
+    add DWORD PTR[ebx], edx ; Incrementando lá na memória o valor da cor
+
+    ;mov eax, [ebx][ecx] ; Pegando o valor da cor escolhida do pixel para ser incrementada
+    ;add eax, edx ; Incrementando a cor
+    ;mov [ebx][ecx], eax ; Devolvendo o valor incrementado para o pixel
+
+    mov esp, ebp
+    pop ebp
+    ret 12
 
 ParseNewLine:
     push ebp
