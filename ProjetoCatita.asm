@@ -13,19 +13,25 @@ includelib \masm32\lib\msvcrt.lib
 include \masm32\macros\macros.asm
 
 .data?
-    cor dd ?
-    incremento dd ?
+    color dd ?
+    increment dd ?
+    fileName db 50 dup(?)
+
     inputString db 50 dup(?)
+    inputHandle dd ?
+    outputHandle dd ?
+    fileHandle dd ?
+    consoleCount dd ?
+    tamanhoString dd ?
+    
+    pixelBuffer db 3 dup(?)
+    readCount 
 
 .data
-    inputHandle dd 0
-    outputHandle dd 0
-    console_count dd 0
-    tamanho_string dd 0
-
     DEBUG_MSG db "String lida: ", 0ah, 0
-    prompt_cor db "Escolha uma cor -> 0-Azul | 1-Verde | 2-Vermelho", 0ah, 0
-    prompt_incremento db "Defina um incremento para a cor escolhida (de 0 a 255)", 0ah, 0
+    prompt_arquivo db "Digite o nome do arquivo a ser usado:"
+    prompt_cor db "Escolha uma color -> 0-Azul | 1-Verde | 2-Vermelho:", 0ah, 0
+    prompt_increment db "Defina um increment para a color escolhida (de 0 a 255):", 0ah, 0
 
 .code
 start:
@@ -39,34 +45,51 @@ start:
     call GetStdHandle
     mov outputHandle, eax
 
-    ; Lendo do usuário qual a cor escolhida
+    ; Lendo nome do arquivo a ser usado
+    invoke StrLen, addr prompt_arquivo
+    mov tamanhoString, eax
+    invoke WriteConsole, outputHandle, addr prompt_arquivo, tamanhoString, addr consoleCount, NULL
+    invoke ReadConsole, inputHandle, addr inputString, sizeof inputString, addr consoleCount, NULL
+    mov eax, inputString
+    mov fileName, eax
+
+    ; Lendo a color escolhida
     invoke StrLen, addr prompt_cor
-    mov tamanho_string, eax
-    invoke WriteConsole, outputHandle, addr prompt_cor, tamanho_string, addr console_count, NULL
-    invoke ReadConsole, inputHandle, addr inputString, sizeof inputString, addr console_count, NULL
+    mov tamanhoString, eax
+    invoke WriteConsole, outputHandle, addr prompt_cor, tamanhoString, addr consoleCount, NULL
+    invoke ReadConsole, inputHandle, addr inputString, sizeof inputString, addr consoleCount, NULL
     push offset inputString
-    call TratarNewLine
-    push offset inputString
-    call atodw
-    mov cor, eax
-
-    ; Lendo do usuário qual o incremento escolhido para a cor
-    invoke StrLen, addr prompt_incremento
-    mov tamanho_string, eax
-    invoke WriteConsole, outputHandle, addr prompt_incremento, tamanho_string, addr console_count, NULL
-    invoke ReadConsole, inputHandle, addr inputString, sizeof inputString, addr console_count, NULL
-    push offset inputString
-    call TratarNewLine
+    call ParseNewLine
     push offset inputString
     call atodw
-    mov incremento, eax
+    mov color, eax
 
-    ;printf("%d\n", cor)
-    ;printf("%d\n", incremento)
+    ; Lendo o increment escolhido para a color
+    invoke StrLen, addr prompt_increment
+    mov tamanhoString, eax
+    invoke WriteConsole, outputHandle, addr prompt_increment, tamanhoString, addr consoleCount, NULL
+    invoke ReadConsole, inputHandle, addr inputString, sizeof inputString, addr consoleCount, NULL
+    push offset inputString
+    call ParseNewLine
+    push offset inputString
+    call atodw
+    mov increment, eax
+
+    ; Abrindo o arquivo para leitura
+    invoke CreateFile, addr fileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
+    mov fileHandle, eax
 
     invoke ExitProcess, 0
 
-TratarNewLine:
+ModifyPixel: ; 3 parâmetros (4 bytes cada) -> pixel db dup(3), cor dd, incremento dd
+    push ebp
+    mov ebp, esp
+    sub esp, 
+    
+    mov 
+    invoke ReadFile, fileHandle, addr pixelBuffer, 3, addr readCount, NULL
+
+ParseNewLine:
     push ebp
     mov ebp, esp
 
