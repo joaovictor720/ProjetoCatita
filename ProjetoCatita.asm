@@ -127,6 +127,7 @@ start:
 
         invoke ExitProcess, 0
 
+; Função que modifica um pixel, incrementando um de seus bytes de cor
 ModifyPixel: ; 3 parâmetros (4 bytes cada) -> addr pixel, cor, incremento
     ; Epílogo sem variáveis locais
     push ebp
@@ -148,6 +149,7 @@ ModifyPixel: ; 3 parâmetros (4 bytes cada) -> addr pixel, cor, incremento
     pop ebp
     ret 12 ; Tirando da pilha os 3 parâmetros de 4 bytes da subrotina
 
+; Função que tira o CRLF de uma string
 ParseNewLine:
     push ebp
     mov ebp, esp
