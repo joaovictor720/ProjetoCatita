@@ -1,6 +1,6 @@
 # ProjetoCatita
 
-ProjetoCatita é uma implementação, em Assembly para Windows 32-bits, de um rasterizador de cores para imagens no formato .bmp (bitmap). 
+ProjetoCatita é uma implementação, em Assembly para Windows 32-bits, de um rasterizador de cores para imagens do formato .bmp (bitmap). 
 O programa cria cópias da imagem escolhida, com uma das cores alteradas.
 
 ### Para utilizar o programa, siga os passos:
